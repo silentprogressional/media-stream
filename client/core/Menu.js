@@ -17,7 +17,7 @@ const Menu = withRouter(({ history }) => (
   <AppBar position="static">
     <Toolbar>
       <Typography type="title" color="inherit">
-        MERN Mediastream
+        MAIN MERN MEDIA
       </Typography>
       <div>
         <Link to="/">
