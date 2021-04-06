@@ -39,4 +39,29 @@ const create = (req, res) => {
   });
 };
 
-export default { create };
+const mediaByID = async (req, res, next, id) => {
+  try {
+    let media = await (await Media.findById(id))
+      .populate("postedBy", "_id name")
+      .exec();
+    if (!media)
+      return res.status("400").json({
+        error: "Media not found",
+      });
+    res.media = media;
+    let files = await gridfs.find({ filename: media._id }).toArray();
+    if (!files[0]) {
+      return res.status(404).send({
+        error: "No video found",
+      });
+    }
+    req.file = files[0];
+    next();
+  } catch (err) {
+    return res.status(404).send({
+      error: "Could not retirieve media file",
+    });
+  }
+};
+
+export default { create, mediaByID };
