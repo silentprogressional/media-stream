@@ -64,4 +64,45 @@ const mediaByID = async (req, res, next, id) => {
   }
 };
 
-export default { create, mediaByID };
+const video = (req, res) => {
+  const range = req.headers["range"];
+  if (range && typeof range === "string") {
+    const parts = range.replace(/bytes=/, "").split("-");
+    const partialstart = parts[0];
+    const partialend = parts[1];
+
+    const start = parseInt(partialstart, 10);
+    const end = partialend ? parseInt(partialend, 10) : req.file.length - 1;
+    const chunksize = end - start + 1;
+
+    res.writeHead(206, {
+      "Accept-Ranges": "bytes",
+      "Content-Length": chunksize,
+      "Content-Range": "bytes " + start + "-" + end + "/" + req.file.lenth,
+      "Content-Type": req.file.contentType,
+    });
+
+    let downloadStream = gridfs.openUploadStream(req.file._id, {
+      start,
+      end: end + 1,
+    });
+    downloadStream.pipe(res);
+    downloadStream.on("error", () => {
+      res.sendStatus(404);
+    });
+    downloadStream.on("end", () => {
+      res.end();
+    });
+  } else {
+    res.header("Content-Length", req.file.length);
+    res.header("Content-Type", req.file.contentType);
+
+    let downloadStream = gridfs.openUploadStream(req.file._id);
+    downloadStream.pipe(res);
+    downloadStream.on("error", () => {
+      res.end();
+    });
+  }
+};
+
+export default { create, mediaByID, video };
